@@ -1,20 +1,5 @@
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+  background-color: #00203FFF;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -24,15 +9,68 @@
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+
+.upload-container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.text-input textarea {
+  width: 100%;
+  height: 100%;
+
+  border: none;
 }
+
+.file-input input[type="file"] {
+  display: none;
+}
+
+.or-subtitle {
+  font-size: 48px;
+  text-align: center;
+}
+
+.file-upload {
+  width: 100%;
+  height: 100%;
+
+  font-weight: 700;
+
+  color: #00203FFF;
+  background-color: #adefd1ff;
+
+  border: 3px solid #00203FFF;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  cursor: pointer;
+}
+
+.text-input, .file-input {
+  width: 400px;
+  height: 290px;
+
+  margin: 25px 0;
+}
+
+.draw-button {
+  display: flex;
+  justify-content: center;
+}
+.draw-button button {
+  padding: 15px 50px;
+  border-radius: 10px;
+  color: #00203FFF;
+  background-color: #fff;
+  border: 2px solid #fff;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+
+  outline: none;
+}
+
