@@ -74,3 +74,12 @@
   outline: none;
 }
 
+.canvas canvas {
+  background-color: white;
+}
+
+.canvas {
+  margin-top: 50px;
+  display: flex;
+  justify-content: center;
+}
