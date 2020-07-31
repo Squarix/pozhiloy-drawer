@@ -9,7 +9,7 @@ const fillText = (canvas, x, y, symbol) => {
 };
 
 const neighbours = (args, line) => {
-  let [x, y, x1, y1] = args;
+  let [ x, y, x1, y1 ] = args;
 
   // In fact, our lines can not intercept, but they lay close and create a closed loop (замкнутый контур)
   // * is points, that we need to check, - is original line
@@ -19,56 +19,38 @@ const neighbours = (args, line) => {
   // I split these points on 4 lines and check if any other line intercepts them
   let l1, l2, l3, l4;
   if (x === x1) {
-    l1 = [x - 1, y, x1 - 1, y1];
-    l2 = [x + 1, y, x1 + 1, y1];
-    l3 = [x - 1, y - 1, x + 1, y - 1];
-    l4 = [x1 - 1, y1 + 1, x1 + 1, y1 + 1];
+    l1 = [ x - 1, y, x1 - 1, y1 ];
+    l2 = [ x + 1, y, x1 + 1, y1 ];
+    l3 = [ x - 1, y - 1, x + 1, y - 1 ];
+    l4 = [ x1 - 1, y1 + 1, x1 + 1, y1 + 1 ];
   } else if (y === y1) {
-    l1 = [x, y - 1, x1, y1 - 1];
-    l2 = [x, y + 1, x1, y1 + 1];
-    l3 = [x - 1, y - 1, x - 1, y + 1];
-    l4 = [x1 + 1, y1 - 1, x1 + 1, y1 + 1];
+    l1 = [ x, y - 1, x1, y1 - 1 ];
+    l2 = [ x, y + 1, x1, y1 + 1 ];
+    l3 = [ x - 1, y - 1, x - 1, y + 1 ];
+    l4 = [ x1 + 1, y1 - 1, x1 + 1, y1 + 1 ];
   } else {
     console.log('Line not supported');
-    return [];
+    return false;
   }
 
-  const intersections = [l1, l2, l3, l4].map(l => {
-    const [x1, y1, x2, y2] = l;
-    const [x3, y3, x4, y4] = line;
+  const intersections = [ l1, l2, l3, l4 ].map(l => {
+    const [ x1, y1, x2, y2 ] = l;
+    const [ x3, y3, x4, y4 ] = line;
 
-
-    const maxx1 = Math.max(x1, x2), maxy1 = Math.max(y1, y2);
-    const minx1 = Math.min(x1, x2), miny1 = Math.min(y1, y2);
-    const maxx2 = Math.max(x3, x4), maxy2 = Math.max(y3, y4);
-    const minx2 = Math.min(x3, x4), miny2 = Math.min(y3, y4);
-
-    if (minx1 > maxx2 || maxx1 < minx2 || miny1 > maxy2 || maxy1 < miny2)
-      return false;  // lines have one common vertex
-
-    const dx1 = x2 - x1, dy1 = y2 - y1; // length of the projections of the first line on the x and y axis
-    const dx2 = x3 - x4, dy2 = y3 - y4; // length of the projections of the second line on the x and y axis
-    const dxx = x1 - x3, dyy = y1 - y3;
-    let div, mul;
-
-
-    if ((div = dy2 * dx1 - dx2 * dy1) === 0) {
-      return false; // lines are parallel
+    // Kramer
+    const denominator = (y4 - y3) * (x1 - x2) - (x4 - x3) * (y1 - y2);
+    if (denominator === 0) {
+      return (
+        (x1 * y2 - x2 * y1) * (x4 - x3) - (x3 * y4 - x4 * y3) * (x2 - x1) === 0 &&
+        (x1 * y2 - x2 * y1) * (y4 - y3) - (x3 * y4 - x4 * y3) * (y2 - y1) === 0
+      );
+    } else {
+      const numeratorA = (x4 - x2) * (y4 - y3) - (x4 - x3) * (y4 - y2);
+      const numeratorB = (x1 - x2) * (y4 - y2) - (x4 - x2) * (y1 - y2);
+      const Ua = numeratorA / denominator;
+      const Ub = numeratorB / denominator;
+      return Ua >= 0 && Ua <= 1 && Ub >= 0 && Ub <= 1;
     }
-
-    if (div > 0) {
-      if ((mul = dx1 * dyy - dy1 * dxx) < 0 || mul > div)
-      return false; // first line intersects beyond its borders
-      if ((mul = dx2 * dyy - dy2 * dxx) < 0 || mul > div)
-      return false; // second line intersects beyond its borders
-    }
-
-    if ((mul = -(dx1 * dyy - dy1 * dxx)) < 0 || mul > -div)
-    return false; // first line intersects beyond its borders
-    if ((mul = -(dx2 * dyy - dy2 * dxx)) < 0 || mul > -div)
-    return false; // second line intersects beyond its borders
-
-    return true;
   });
 
   return intersections.filter(l => l).length > 0;
@@ -79,7 +61,7 @@ const objectMapper = {
     type: 'element',
     func: args => {
       // Scale just for better appearance
-      const [width, height] = args;
+      const [ width, height ] = args;
       const canvas = document.createElement('canvas');
 
       canvas.width = width * SCALE;
@@ -94,16 +76,16 @@ const objectMapper = {
   L: {
     type: 'shape',
     func: (canvas, args) => {
-      const [x, y, x1, y1] = args;
+      const [ x, y, x1, y1 ] = args;
       canvas.metaObject.push({ type: 'L', coordinates: args });
 
       if (x === x1) {
-        const [yFrom, yTo] = y1 > y ? [y, y1] : [y1, y];
+        const [ yFrom, yTo ] = y1 > y ? [ y, y1 ] : [ y1, y ];
         for (let i = yFrom; i <= yTo; i++) {
           fillText(canvas, x, i, 'x');
         }
       } else if (y === y1) {
-        const [xFrom, xTo] = x1 > x ? [x, x1] : [x1, x];
+        const [ xFrom, xTo ] = x1 > x ? [ x, x1 ] : [ x1, x ];
         for (let i = xFrom; i <= xTo; i++) {
           fillText(canvas, i, y, 'x');
         }
@@ -115,10 +97,10 @@ const objectMapper = {
   R: {
     type: 'shape',
     func: (canvas, args) => {
-      const [x, y, x1, y1] = args;
+      const [ x, y, x1, y1 ] = args;
 
-      const [xFrom, xTo] = x1 > x ? [x, x1] : [x1, x];
-      const [yFrom, yTo] = y1 > y ? [y, y1] : [y1, y];
+      const [ xFrom, xTo ] = x1 > x ? [ x, x1 ] : [ x1, x ];
+      const [ yFrom, yTo ] = y1 > y ? [ y, y1 ] : [ y1, y ];
 
       canvas.metaObject.push({ type: 'R', coordinates: args, height: yTo - yFrom, width: xTo - xFrom });
 
@@ -128,13 +110,13 @@ const objectMapper = {
       //   }
       // }
 
-      for (const x of [xFrom, xTo]) {
+      for (const x of [ xFrom, xTo ]) {
         for (let i = yFrom + 1; i < yTo; i++) {
           fillText(canvas, x, i, 'x');
         }
       }
 
-      for (const y of [yFrom, yTo]) {
+      for (const y of [ yFrom, yTo ]) {
         for (let i = xFrom; i <= xTo; i++) {
           fillText(canvas, i, y, 'x');
         }
@@ -144,28 +126,28 @@ const objectMapper = {
   B: {
     type: 'fill',
     func: (canvas, args) => {
-      const [xB, yB, c] = args;
+      const [ xB, yB, c ] = args;
 
       let fillableShape = null;
 
       const lines = [];
 
       // Take borders as lines in order to find closed loop
-      lines.push({ type: 'L', coordinates: [0, 0, 0, canvas.height / SCALE] });
-      lines.push({ type: 'L', coordinates: [0, 0, canvas.width / SCALE, 0] });
-      lines.push({ type: 'L', coordinates: [0, canvas.height / SCALE, canvas.width / SCALE, canvas.height / SCALE] });
-      lines.push({ type: 'L', coordinates: [canvas.width / SCALE, 0, canvas.width / SCALE, canvas.height / SCALE] });
+      lines.push({ type: 'L', coordinates: [ 0, 0, 0, canvas.height / SCALE ] });
+      lines.push({ type: 'L', coordinates: [ 0, 0, canvas.width / SCALE, 0 ] });
+      lines.push({ type: 'L', coordinates: [ 0, canvas.height / SCALE, canvas.width / SCALE, canvas.height / SCALE ] });
+      lines.push({ type: 'L', coordinates: [ canvas.width / SCALE, 0, canvas.width / SCALE, canvas.height / SCALE ] });
 
       canvas.metaObject.forEach(object => {
         if (object.type === 'L') {
           lines.push(object);
         } else if (object.type === 'R') {
-          const [x1, y1, x2, y2] = object.coordinates;
+          const [ x1, y1, x2, y2 ] = object.coordinates;
           // Split rectangle in 4 lines ==> Just to make all elements same
-          lines.push({ type: 'L', coordinates: [x1, y1, x2, y1] });
-          lines.push({ type: 'L', coordinates: [x1, y1, x1, y2] });
-          lines.push({ type: 'L', coordinates: [x1, y2, x2, y2] });
-          lines.push({ type: 'L', coordinates: [x2, y1, x2, y2] });
+          lines.push({ type: 'L', coordinates: [ x1, y1, x2, y1 ] });
+          lines.push({ type: 'L', coordinates: [ x1, y1, x1, y2 ] });
+          lines.push({ type: 'L', coordinates: [ x1, y2, x2, y2 ] });
+          lines.push({ type: 'L', coordinates: [ x2, y1, x2, y2 ] });
         }
       });
 
@@ -348,7 +330,7 @@ class App extends Component {
           <div className="draw-button">
             <button name="textInput" onClick={this.draw} disabled={fileUploading}>Draw</button>
           </div>
-          <div className="canvas" ref={element => this.handleCanvasRef(element, canvas)} />
+          <div className="canvas" ref={element => this.handleCanvasRef(element, canvas)}/>
         </div>
       </div>
     );
