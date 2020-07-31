@@ -5,20 +5,80 @@ const inputTypes = Object.freeze({ text: 'textInput', file: 'fileContent' });
 
 const SCALE = 10
 const fillText = (canvas, x, y, symbol) => {
-  // console.log(canvas);
-  canvas.getContext("2d").fillText(symbol, (x - 1) * SCALE, (y - 1) * SCALE, SCALE);
+  canvas.getContext("2d").fillText(symbol, (x - 1) * SCALE, y * SCALE, SCALE);
 };
+
+const neighbours = (args, line) => {
+  let [x, y, x1, y1] = args;
+  let l1, l2, l3, l4;
+  if (x === x1) {
+    l1 = [x - 1, y, x1 - 1, y1];
+    l2 = [x + 1, y, x1 + 1, y1];
+    l3 = [x - 1, y - 1, x + 1, y - 1];
+    l4 = [x1 - 1, y1 + 1, x1 + 1, y1 + 1];
+  } else if (y === y1) {
+    l1 = [x, y - 1, x1, y1 - 1];
+    l2 = [x, y + 1, x1, y1 + 1];
+    l3 = [x - 1, y - 1, x - 1, y + 1];
+    l4 = [x1 + 1, y1 - 1, x1 + 1, y1 + 1];
+  } else {
+    console.log('Line not supported');
+    return [];
+  }
+
+  const intersections = [l1, l2, l3, l4].map(l => {
+    const [x1, y1, x2, y2] = l;
+    const [x3, y3, x4, y4] = line;
+
+
+    const maxx1 = Math.max(x1, x2), maxy1 = Math.max(y1, y2);
+    const minx1 = Math.min(x1, x2), miny1 = Math.min(y1, y2);
+    const maxx2 = Math.max(x3, x4), maxy2 = Math.max(y3, y4);
+    const minx2 = Math.min(x3, x4), miny2 = Math.min(y3, y4);
+
+    if (minx1 > maxx2 || maxx1 < minx2 || miny1 > maxy2 || maxy1 < miny2)
+      return false;  // lines have one common vertex
+
+    const dx1 = x2 - x1, dy1 = y2 - y1; // length of the projections of the first line on the x and y axis
+    const dx2 = x3 - x4, dy2 = y3 - y4; // length of the projections of the second line on the x and y axis
+    const dxx = x1 - x3, dyy = y1 - y3;
+    let div, mul;
+
+
+    if ((div = dy2 * dx1 - dx2 * dy1) === 0) {
+      return false; // lines are parallel
+    }
+
+    if (div > 0) {
+      if ((mul = dx1 * dyy - dy1 * dxx) < 0 || mul > div)
+      return false; // first line intersects beyond its borders
+      if ((mul = dx2 * dyy - dy2 * dxx) < 0 || mul > div)
+      return false; // second line intersects beyond its borders
+    }
+
+    if ((mul = -(dx1 * dyy - dy1 * dxx)) < 0 || mul > -div)
+    return false; // first line intersects beyond its borders
+    if ((mul = -(dx2 * dyy - dy2 * dxx)) < 0 || mul > -div)
+    return false; // second line intersects beyond its borders
+
+    return true;
+  });
+
+  return intersections.filter(l => l).length > 0;
+}
 
 const objectMapper = {
   C: {
     type: 'element',
     func: args => {
+      // Scale just for better appearance
       const [width, height] = args;
       const canvas = document.createElement('canvas');
 
       canvas.width = width * SCALE;
       canvas.height = height * SCALE;
 
+      // information about drew objects
       Object.defineProperty(canvas, 'metaObject', { value: [], writable: false });
 
       return canvas;
@@ -80,6 +140,19 @@ const objectMapper = {
       const [xB, yB, c] = args;
 
       let fillableShape = null;
+
+      const lines = [];
+      canvas.metaObject.forEach(object => {
+        if (object.type === 'L') {
+          lines.push(object);
+        } else if (object.type === 'R') {
+          const [x1, y1, x2, y2] = args;
+          lines.push({ type: 'L', coordinates: [x1, y1, x2, y1] });
+          lines.push({ type: 'L', coordinates: [x1, y1, x1, y2] });
+          lines.push({ type: 'L', coordinates: [x1, y2, x2, y2] });
+          lines.push({ type: 'L', coordinates: [x2, y1, x2, y2] });
+        }
+      });
 
       const drawObjects = [];
       canvas.metaObject.forEach(object => {
@@ -175,15 +248,18 @@ class App extends Component {
   }
 
   onFileUpload = ({ target }) => {
-    this.setState({ fileUploading: true });
+    if (target.files[0]) {
+      this.setState({ fileUploading: true });
 
-    const fileReader = new FileReader();
-    fileReader.onload = async ({ target: { result}}) => {
-      this.setState({ lastInput: inputTypes.file, fileContent: result, fileUploading: false })
-    };
+      const fileReader = new FileReader();
+      fileReader.onload = async ({ target: { result } }) => {
+        this.setState({ lastInput: inputTypes.file, fileContent: result, fileUploading: false })
+      };
 
-    fileReader.readAsText(target.files[0]);
+      fileReader.readAsText(target.files[0]);
+    }
   }
+
 
   draw = () => {
     const { lastInput, fileContent, textInput } = this.state;
@@ -205,7 +281,13 @@ class App extends Component {
       let canvas = null;
       const rows = content.split('\n');
       rows.forEach(row => {
-        const args = row.split(' ').filter(arg => arg);
+        const args = row.split(' ').map(arg => {
+          if (!isNaN(arg)) {
+            return Number.parseInt(arg);
+          }
+
+          return arg;
+        }).filter(arg => arg);
         const command = args.shift();
 
         if (command === 'C') {
