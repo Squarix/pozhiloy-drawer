@@ -10,6 +10,13 @@ const fillText = (canvas, x, y, symbol) => {
 
 const neighbours = (args, line) => {
   let [x, y, x1, y1] = args;
+
+  // In fact, our lines can not intercept, but they lay close and create a closed loop (замкнутый контур)
+  // * is points, that we need to check, - is original line
+  // *******
+  // *-----*
+  // *******
+  // I split these points on 4 lines and check if any other line intercepts them
   let l1, l2, l3, l4;
   if (x === x1) {
     l1 = [x - 1, y, x1 - 1, y1];
@@ -88,7 +95,7 @@ const objectMapper = {
     type: 'shape',
     func: (canvas, args) => {
       const [x, y, x1, y1] = args;
-      canvas.metaObject.push = [{ type: 'L', coordinates: args }];
+      canvas.metaObject.push({ type: 'L', coordinates: args });
 
       if (x === x1) {
         const [yFrom, yTo] = y1 > y ? [y, y1] : [y1, y];
@@ -113,7 +120,7 @@ const objectMapper = {
       const [xFrom, xTo] = x1 > x ? [x, x1] : [x1, x];
       const [yFrom, yTo] = y1 > y ? [y, y1] : [y1, y];
 
-      canvas.metaObject.push = [{ type: 'R', coordinates: args, height: yTo - yFrom, width: xTo - xFrom }];
+      canvas.metaObject.push({ type: 'R', coordinates: args, height: yTo - yFrom, width: xTo - xFrom });
 
       // for (let i = xFrom + 10; i < xTo; i += 10) {
       //   for (let j = yFrom + 10; j < yTo; j += 10) {
@@ -142,11 +149,19 @@ const objectMapper = {
       let fillableShape = null;
 
       const lines = [];
+
+      // Take borders as lines in order to find closed loop
+      lines.push({ type: 'L', coordinates: [0, 0, 0, canvas.height / SCALE] });
+      lines.push({ type: 'L', coordinates: [0, 0, canvas.width / SCALE, 0] });
+      lines.push({ type: 'L', coordinates: [0, canvas.height / SCALE, canvas.width / SCALE, canvas.height / SCALE] });
+      lines.push({ type: 'L', coordinates: [canvas.width / SCALE, 0, canvas.width / SCALE, canvas.height / SCALE] });
+
       canvas.metaObject.forEach(object => {
         if (object.type === 'L') {
           lines.push(object);
         } else if (object.type === 'R') {
-          const [x1, y1, x2, y2] = args;
+          const [x1, y1, x2, y2] = object.coordinates;
+          // Split rectangle in 4 lines ==> Just to make all elements same
           lines.push({ type: 'L', coordinates: [x1, y1, x2, y1] });
           lines.push({ type: 'L', coordinates: [x1, y1, x1, y2] });
           lines.push({ type: 'L', coordinates: [x1, y2, x2, y2] });
@@ -154,66 +169,80 @@ const objectMapper = {
         }
       });
 
-      const drawObjects = [];
-      canvas.metaObject.forEach(object => {
-        const [x, y, x1, y1] = object.coordinates;
-
-        const [xFrom, xTo] = x1 > x ? [x, x1] : [x1, x];
-        const [yFrom, yTo] = y1 > y ? [y, y1] : [y1, y];
-
-        if (xB >= xFrom && xB <= xTo && yB >= yFrom && yB <= yTo) {
-          drawObjects.push(object);
-        }
-      })
-
-      if (drawObjects.length > 1) {
-        let prevObject = drawObjects[0];
-        for (let i = 1; i < drawObjects.length; i++) {
-          const [x1, y1, x2, y2] = prevObject.coordinates;
-          const [x3, y3, x4, y4] = drawObjects[i].coordinates;
-
-          const left = Math.max(x1, x3);
-          const right = Math.min(x2, x4);
-
-          const top = Math.min(y2, y4);
-          const bottom = Math.max(y1, y3);
-
-          prevObject = { coordinates: [left, bottom, right, top] };
-        }
-
-        fillableShape = prevObject;
-      }
-
-      if (fillableShape) {
-        const [ xF, yF, xF1, yF1 ] = fillableShape.coordinates;
-        for (const x of [xF, xF1]) {
-          for (let i = yF; i < yF1; i++) {
-            fillText(canvas, x, i, c);
+      const nbHood = lines.map((line, index) => {
+        return lines.map((l, i) => {
+          if (i === index) return null;
+          if (neighbours(line.coordinates, l.coordinates)) {
+            return l;
           }
-        }
 
-        for (const y of [yF, yF1]) {
-          for (let i = xF; i < xF1; i++) {
-            fillText(canvas, i, y, c);
-          }
-        }
-      } else {
-        const { width, height } = canvas.getBoundingClientRect();
-        for (let i = 0; i < width; i++) {
-          for (let j = 0; j < height; j++) {
-            canvas.metaObject.forEach(obj => {
-              const [x, y, x1, y1] = obj.coordinates;
+          return null;
+        }).filter(l => l);
+      });
 
-              if (i >= x && i <= x1 && j >= y && j <= y1) {
-                i += obj.width;
-                j += obj.height;
-              } else {
-                fillText(canvas, i, j, c);
-              }
-            })
-          }
-        }
-      }
+      console.log(lines);
+      console.log(nbHood);
+      //
+      // const drawObjects = [];
+      // canvas.metaObject.forEach(object => {
+      //   const [x, y, x1, y1] = object.coordinates;
+      //
+      //   const [xFrom, xTo] = x1 > x ? [x, x1] : [x1, x];
+      //   const [yFrom, yTo] = y1 > y ? [y, y1] : [y1, y];
+      //
+      //   if (xB >= xFrom && xB <= xTo && yB >= yFrom && yB <= yTo) {
+      //     drawObjects.push(object);
+      //   }
+      // })
+      //
+      // if (drawObjects.length > 1) {
+      //   let prevObject = drawObjects[0];
+      //   for (let i = 1; i < drawObjects.length; i++) {
+      //     const [x1, y1, x2, y2] = prevObject.coordinates;
+      //     const [x3, y3, x4, y4] = drawObjects[i].coordinates;
+      //
+      //     const left = Math.max(x1, x3);
+      //     const right = Math.min(x2, x4);
+      //
+      //     const top = Math.min(y2, y4);
+      //     const bottom = Math.max(y1, y3);
+      //
+      //     prevObject = { coordinates: [left, bottom, right, top] };
+      //   }
+      //
+      //   fillableShape = prevObject;
+      // }
+      //
+      // if (fillableShape) {
+      //   const [ xF, yF, xF1, yF1 ] = fillableShape.coordinates;
+      //   for (const x of [xF, xF1]) {
+      //     for (let i = yF; i < yF1; i++) {
+      //       fillText(canvas, x, i, c);
+      //     }
+      //   }
+      //
+      //   for (const y of [yF, yF1]) {
+      //     for (let i = xF; i < xF1; i++) {
+      //       fillText(canvas, i, y, c);
+      //     }
+      //   }
+      // } else {
+      //   const { width, height } = canvas.getBoundingClientRect();
+      //   for (let i = 0; i < width; i++) {
+      //     for (let j = 0; j < height; j++) {
+      //       canvas.metaObject.forEach(obj => {
+      //         const [x, y, x1, y1] = obj.coordinates;
+      //
+      //         if (i >= x && i <= x1 && j >= y && j <= y1) {
+      //           i += obj.width;
+      //           j += obj.height;
+      //         } else {
+      //           fillText(canvas, i, j, c);
+      //         }
+      //       })
+      //     }
+      //   }
+      // }
     }
   }
 }
