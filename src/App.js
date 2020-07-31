@@ -3,9 +3,10 @@ import './App.css';
 
 const inputTypes = Object.freeze({ text: 'textInput', file: 'fileContent' });
 
+const SCALE = 10
 const fillText = (canvas, x, y, symbol) => {
   // console.log(canvas);
-  canvas.getContext("2d").fillText(symbol, x, y, 10);
+  canvas.getContext("2d").fillText(symbol, (x - 1) * SCALE, (y - 1) * SCALE, SCALE);
 };
 
 const objectMapper = {
@@ -15,8 +16,8 @@ const objectMapper = {
       const [width, height] = args;
       const canvas = document.createElement('canvas');
 
-      canvas.width = (Number.parseInt(width) + 1) * 10;
-      canvas.height = (Number.parseInt(height) + 1) * 10;
+      canvas.width = width * SCALE;
+      canvas.height = height * SCALE;
 
       Object.defineProperty(canvas, 'metaObject', { value: [], writable: false });
 
@@ -30,14 +31,14 @@ const objectMapper = {
       canvas.metaObject.push = [{ type: 'L', coordinates: args }];
 
       if (x === x1) {
-        const [yFrom, yTo] = y1 > y ? [y * 10, y1 * 10] : [y1 * 10, y * 10];
-        for (let i = yFrom; i <= yTo; i += 10) {
-          fillText(canvas, x * 10, i, 'x');
+        const [yFrom, yTo] = y1 > y ? [y, y1] : [y1, y];
+        for (let i = yFrom; i <= yTo; i++) {
+          fillText(canvas, x, i, 'x');
         }
       } else if (y === y1) {
-        const [xFrom, xTo] = x1 > x ? [x * 10, x1 * 10] : [x1 * 10, x * 10];
-        for (let i = xFrom; i <= xTo; i += 10) {
-          fillText(canvas, i, y * 10, 'x');
+        const [xFrom, xTo] = x1 > x ? [x, x1] : [x1, x];
+        for (let i = xFrom; i <= xTo; i++) {
+          fillText(canvas, i, y, 'x');
         }
       } else {
         alert('Line is not supported');
@@ -49,10 +50,10 @@ const objectMapper = {
     func: (canvas, args) => {
       const [x, y, x1, y1] = args;
 
-      const [xFrom, xTo] = x1 > x ? [x * 10, x1 * 10] : [x1 * 10, x * 10];
-      const [yFrom, yTo] = y1 > y ? [y * 10, y1 * 10] : [y1 * 10, y * 10];
+      const [xFrom, xTo] = x1 > x ? [x, x1] : [x1, x];
+      const [yFrom, yTo] = y1 > y ? [y, y1] : [y1, y];
 
-      canvas.metaObject.push = [{ type: 'R', coordinates: args, height: yTo / 10 - yFrom / 10, width: xTo / 10 - xFrom / 10 }];
+      canvas.metaObject.push = [{ type: 'R', coordinates: args, height: yTo - yFrom, width: xTo - xFrom }];
 
       // for (let i = xFrom + 10; i < xTo; i += 10) {
       //   for (let j = yFrom + 10; j < yTo; j += 10) {
@@ -61,13 +62,13 @@ const objectMapper = {
       // }
 
       for (const x of [xFrom, xTo]) {
-        for (let i = yFrom + 10; i < yTo; i += 10) {
+        for (let i = yFrom + 1; i < yTo; i++) {
           fillText(canvas, x, i, 'x');
         }
       }
 
       for (const y of [yFrom, yTo]) {
-        for (let i = xFrom; i <= xTo; i += 10) {
+        for (let i = xFrom; i <= xTo; i++) {
           fillText(canvas, i, y, 'x');
         }
       }
@@ -84,8 +85,8 @@ const objectMapper = {
       canvas.metaObject.forEach(object => {
         const [x, y, x1, y1] = object.coordinates;
 
-        const [xFrom, xTo] = x1 > x ? [x * 10, x1 * 10] : [x1 * 10, x * 10];
-        const [yFrom, yTo] = y1 > y ? [y * 10, y1 * 10] : [y1 * 10, y * 10];
+        const [xFrom, xTo] = x1 > x ? [x, x1] : [x1, x];
+        const [yFrom, yTo] = y1 > y ? [y, y1] : [y1, y];
 
         if (xB >= xFrom && xB <= xTo && yB >= yFrom && yB <= yTo) {
           drawObjects.push(object);
@@ -112,25 +113,25 @@ const objectMapper = {
 
       if (fillableShape) {
         const [ xF, yF, xF1, yF1 ] = fillableShape.coordinates;
-        for (const x of [xF * 10, xF1 * 10]) {
-          for (let i = yF * 10; i < yF1 * 10; i += 10) {
+        for (const x of [xF, xF1]) {
+          for (let i = yF; i < yF1; i++) {
             fillText(canvas, x, i, c);
           }
         }
 
-        for (const y of [yF * 10, yF1 * 10]) {
-          for (let i = xF * 10; i < xF1; i += 10) {
+        for (const y of [yF, yF1]) {
+          for (let i = xF; i < xF1; i++) {
             fillText(canvas, i, y, c);
           }
         }
       } else {
         const { width, height } = canvas.getBoundingClientRect();
-        for (let i = 0; i < width; i += 10) {
-          for (let j = 0; j < height; j += 10) {
+        for (let i = 0; i < width; i++) {
+          for (let j = 0; j < height; j++) {
             canvas.metaObject.forEach(obj => {
               const [x, y, x1, y1] = obj.coordinates;
 
-              if (i >= x * 10 && i <= x1 * 10 && j >= y * 10 && j <= y1 * 10) {
+              if (i >= x && i <= x1 && j >= y && j <= y1) {
                 i += obj.width;
                 j += obj.height;
               } else {
