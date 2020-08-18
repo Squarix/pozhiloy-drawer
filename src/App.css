@@ -59,7 +59,8 @@
 
 .draw-button {
   display: flex;
-  justify-content: center;
+  flex-direction: row;
+  justify-content: space-between;
 }
 .draw-button button {
   padding: 15px 50px;
