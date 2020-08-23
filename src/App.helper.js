@@ -12,7 +12,6 @@ export const fillText = (canvas, x, y, symbol) => {
 export const fillPoint = (canvas, prevSymbol, fillableSymbol) => {
   while (true) {
     if (tempPoints.length === 0) {
-      console.log("FINISHED");
       return null;
     }
 
@@ -42,9 +41,7 @@ export const fillPoint = (canvas, prevSymbol, fillableSymbol) => {
         canvas.originalHeight >= direction.y &&
         !tempPoints.find(p => p.x === direction.x && p.y === direction.y)
       ) {
-        // if () {
           tempPoints.push({ x: direction.x, y: direction.y });
-        // }
       }
     });
   }
