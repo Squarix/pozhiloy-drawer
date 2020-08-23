@@ -1,5 +1,7 @@
 const SCALE = 10
 
+let tempPoints = [];
+
 export const inputTypes = Object.freeze({ text: 'textInput', file: 'fileContent' });
 
 export const fillText = (canvas, x, y, symbol) => {
@@ -7,39 +9,45 @@ export const fillText = (canvas, x, y, symbol) => {
   canvas.getContext("2d").fillText(symbol, (x - 1) * SCALE, y * SCALE, SCALE);
 };
 
-export const fillPoint = (canvas, x, y, prevSymbol, fillableSymbol) => {
-  // some magic with recursion
-  // one to the left
-
-  if (y === 0) {
-    return null;
-  }
-
-  fillText(canvas, x, y, fillableSymbol);
-
-  if (x < 2 || y < 0) {
-    return null;
-  }
-
-  const leftPos = { x: x - 1, y: y };
-  const rightPos = { x: x + 1, y: y };
-
-  const topPos = { x: x, y: y - 1 };
-  const bottomPos = { x: x, y: y + 1 };
-
-  const directions = [leftPos, rightPos, topPos, bottomPos];
-  directions.forEach(direction => {
-    if (
-      canvas.textCanvas[direction.y] &&
-      canvas.textCanvas[direction.y][direction.x] === prevSymbol &&
-      canvas.originalWidth >= direction.x &&
-      canvas.originalHeight >= direction.y
-    ) {
-      fillPoint(canvas, direction.x, direction.y, prevSymbol, fillableSymbol);
+export const fillPoint = (canvas, prevSymbol, fillableSymbol) => {
+  while (true) {
+    if (tempPoints.length === 0) {
+      console.log("FINISHED");
+      return null;
     }
-  })
 
-  return null;
+    const { x, y } = tempPoints.shift();
+    if (y === 0) {
+      continue;
+    }
+
+    fillText(canvas, x, y, fillableSymbol);
+
+    if (x < 2 || y < 0) {
+      continue;
+    }
+
+    const leftPos = { x: x - 1, y: y };
+    const rightPos = { x: x + 1, y: y };
+
+    const topPos = { x: x, y: y - 1 };
+    const bottomPos = { x: x, y: y + 1 };
+
+    const directions = [leftPos, rightPos, topPos, bottomPos];
+    directions.forEach(direction => {
+      if (
+        canvas.textCanvas[direction.y] &&
+        canvas.textCanvas[direction.y][direction.x] === prevSymbol &&
+        canvas.originalWidth >= direction.x &&
+        canvas.originalHeight >= direction.y &&
+        !tempPoints.find(p => p.x === direction.x && p.y === direction.y)
+      ) {
+        // if () {
+          tempPoints.push({ x: direction.x, y: direction.y });
+        // }
+      }
+    });
+  }
 };
 
 export const commandsMapper = {
@@ -120,7 +128,8 @@ export const commandsMapper = {
     type: 'fill',
     func: (canvas, args) => {
       const [xB, yB, c] = args;
-      fillPoint(canvas, xB, yB, canvas.textCanvas[yB][xB], c);
+      tempPoints.push({ x: xB, y: yB });
+      fillPoint(canvas, canvas.textCanvas[yB][xB], c);
     }
   }
 }

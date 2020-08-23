@@ -142,8 +142,8 @@ class App extends Component {
               <button name="exportTxt" onClick={this.exportTxt} disabled={!canvas}>Export</button>
             </div>
           </div>
-          <div className="canvas" ref={element => this.handleCanvasRef(element, canvas)}/>
         </div>
+        <div className="canvas" ref={element => this.handleCanvasRef(element, canvas)}/>
       </div>
     );
   }
