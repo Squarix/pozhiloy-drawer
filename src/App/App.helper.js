@@ -10,7 +10,7 @@ export const fillText = (canvas, x, y, symbol) => {
   canvas.getContext("2d").fillText(symbol, (x - 1) * SCALE, y * SCALE, SCALE);
 };
 
-export const fillPoint = (canvas, prevSymbol, fillableSymbol) => {
+export const fillPoint = (canvas, prevSymbol, refillableSymbol) => {
   for (; tempPoints.length > 0;) {
     const { x, y } = tempPoints.shift();
 
@@ -18,7 +18,7 @@ export const fillPoint = (canvas, prevSymbol, fillableSymbol) => {
       continue;
     }
 
-    fillText(canvas, x, y, fillableSymbol);
+    fillText(canvas, x, y, refillableSymbol);
 
     if (x < 2 || y < 0) {
       continue;

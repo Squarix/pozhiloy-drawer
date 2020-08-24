@@ -1,6 +1,8 @@
 .App {
   background-color: #00203FFF;
   min-height: 100vh;
+  width: fit-content;
+  min-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;

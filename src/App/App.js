@@ -45,7 +45,7 @@ class App extends Component {
     }
   }
 
-  exportTxt = () => {
+  prepareTextCanvas = () => {
     const { canvas: { textCanvas, originalWidth, originalHeight } } = this.state;
     for (let i = 0; i < originalWidth + 1; i++) {
       textCanvas[0][i] = '-';
@@ -57,7 +57,7 @@ class App extends Component {
       textCanvas[i][originalWidth] = '|';
     }
 
-    const text = textCanvas.map(row => {
+    return textCanvas.map(row => {
       let string = '';
       for (let i = 0; i < row.length; i++) {
         string += row[i] || ' ';
@@ -65,14 +65,20 @@ class App extends Component {
 
       return string;
     }).join('\n');
+  }
+
+  exportTxt = () => {
+    const text = this.prepareTextCanvas();
 
     const data = new Blob([text], { type: 'text/plain' });
     const a = document.createElement('a');
 
-    document.body.appendChild(a);
     a.href = window.URL.createObjectURL(data);
     a.download = 'output.txt';
     a.click();
+
+    document.body.appendChild(a);
+
 
     setTimeout(() => {
       window.URL.revokeObjectURL(a.href);
@@ -132,7 +138,7 @@ class App extends Component {
           <div className="or-subtitle">OR</div>
           <div className="file-input">
             <label className="file-upload">
-              <input type="file" onChange={this.onFileUpload} accept=".txt"/>
+              <input type="file" data-testid="file-upload" onChange={this.onFileUpload} accept=".txt"/>
               {fileContent ? 'Change file' : 'Upload file'}
             </label>
           </div>
