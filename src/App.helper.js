@@ -1,6 +1,7 @@
 const SCALE = 10
 
 let tempPoints = [];
+let consideredPoints = {};
 
 export const inputTypes = Object.freeze({ text: 'textInput', file: 'fileContent' });
 
@@ -36,12 +37,16 @@ export const fillPoint = (canvas, prevSymbol, fillableSymbol) => {
         canvas.textCanvas[direction.y][direction.x] === prevSymbol &&
         canvas.originalWidth >= direction.x &&
         canvas.originalHeight >= direction.y &&
-        !tempPoints.find(p => p.x === direction.x && p.y === direction.y)
+        !consideredPoints[`(${direction.x};${direction.y})`]
+        // !tempPoints.find(p => p.x === direction.x && p.y === direction.y)
       ) {
           tempPoints.push({ x: direction.x, y: direction.y });
+          consideredPoints[`(${direction.x};${direction.y})`] = true;
       }
     });
   }
+
+  consideredPoints = {};
 };
 
 export const commandsMapper = {
@@ -123,6 +128,7 @@ export const commandsMapper = {
     func: (canvas, args) => {
       const [xB, yB, c] = args;
       tempPoints.push({ x: xB, y: yB });
+      consideredPoints[`(${xB};${yB})`] = true;
       fillPoint(canvas, canvas.textCanvas[yB][xB], c);
     }
   }
