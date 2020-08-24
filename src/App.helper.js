@@ -10,12 +10,9 @@ export const fillText = (canvas, x, y, symbol) => {
 };
 
 export const fillPoint = (canvas, prevSymbol, fillableSymbol) => {
-  while (true) {
-    if (tempPoints.length === 0) {
-      return null;
-    }
-
+  for (; tempPoints.length > 0;) {
     const { x, y } = tempPoints.shift();
+
     if (y === 0) {
       continue;
     }
